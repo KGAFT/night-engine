@@ -1,0 +1,4 @@
+[submodule "modules/vulkan-lib"]
+	path = modules/vulkan-lib
+	url = https://github.com/kgaft/VulkanLib
+	branch = rust
