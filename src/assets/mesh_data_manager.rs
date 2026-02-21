@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::assets::vertex_data::{Vertex, VertexData};
 use crate::util::generate_random_alphanumeric_string;
 use bincode::config::{Configuration, Fixint, LittleEndian};
@@ -38,7 +39,7 @@ impl Storage {
 }
 
 // Use a helper function that forces little-endian encoding
-fn bincode_options() -> Configuration<LittleEndian, Fixint> {
+pub fn bincode_options() -> Configuration<LittleEndian, Fixint> {
     // Always little-endian, fixed-int encoding = stable & minimal
     bincode::config::standard()
         .with_little_endian()
@@ -120,7 +121,7 @@ impl Value for Storage {
 
 static TEXTURE_STORAGE_INDEX: TableDefinition<u64, Storage> = TableDefinition::new("texture_index");
 static VERTEX_STORAGE_INDEX: TableDefinition<u64, Storage> = TableDefinition::new("vertex");
-static BINARY_META_INDEX: TableDefinition<u64, BinaryDataInfo> = TableDefinition::new("binary_data");
+pub(crate) static BINARY_META_INDEX: TableDefinition<u64, BinaryDataInfo> = TableDefinition::new("binary_data");
 pub static DEFAULT_TEXTURE_STORAGE_SIZE: usize = 1024 * 1024 * 1024;
 pub static DEFAULT_VERTEX_STORAGE_SIZE: usize = 1024 * 1024 * 20;
 pub struct DataManager {
@@ -129,6 +130,8 @@ pub struct DataManager {
     texture_storage_work_size: usize,
     vertex_storage_work_size: usize,
 }
+
+
 
 impl DataManager {
     pub fn create_or_open(path: &Path, blob_path: Option<PathBuf>) -> Result<Self, DatabaseError> {
@@ -266,6 +269,26 @@ impl DataManager {
             storage.relative_path = generate_random_alphanumeric_string(32);
         }
         storage
+    }
+
+    /// Returns the blob file path, byte offset, and byte length for a stored binary resource.
+    /// Used by the streaming system to memory-map the data without copying.
+    pub fn get_data_location(&self, id: u64) -> Option<(PathBuf, usize, usize)> {
+        let read = self.db.begin_read().ok()?;
+
+        let meta_table = read.open_table(BINARY_META_INDEX).ok()?;
+        let meta = meta_table.get(id).ok()??.value();
+        drop(meta_table);
+
+        let path = if meta.is_vertex {
+            let table = read.open_table(VERTEX_STORAGE_INDEX).ok()?;
+            table.get(meta.storage_id).ok()??.value().construct_path(self.base_path.clone())
+        } else {
+            let table = read.open_table(TEXTURE_STORAGE_INDEX).ok()?;
+            table.get(meta.storage_id).ok()??.value().construct_path(self.base_path.clone())
+        };
+
+        Some((path, meta.offset, meta.size))
     }
 
     pub fn set_texture_storage_work_size(&mut self, texture_storage_work_size: usize) {

@@ -1,7 +1,9 @@
+use std::sync::Arc;
 use std::time::Instant;
 use glam::{Vec2, Vec3, Vec4};
 use serde::{Deserialize, Serialize};
 use crate::assets::mesh_data_manager::{BinData, DataManager};
+use crate::assets::streaming_session::{StreamingSession, UserRequest};
 use crate::assets::vertex_data::{Vertex, VertexData};
 
 mod assets;
@@ -18,42 +20,24 @@ impl BinData for TestBinData{
         size_of::<u64>()+self.binary.len()
     }
 }
+#[tokio::main]
+async fn main() {
 
-fn main() {
-    let mut vertices = Vec::new();
-    let mut indices = Vec::new();
-    for i in 0..500000{
-        let vertex = Vertex{
-            position: Some(Vec3::new(0f32, 23f32, 43f32)),
-            normal: Some(Vec3::new(0f32, 23f32, 43f32)),
-            tangent: Some(Vec4::new(0f32, 23f32, 43f32, 0f32)),
-            uv: Some(Vec2::new(0f32, 23f32)),
-            color: Some(Vec4::new(0f32, 23f32, 43f32, 0f32)),
-            bone_indices: Some([54, 34, 34, 123]),
-            bone_weights: Some(Vec4::new(0f32, 23f32, 43f32, 0f32)),
-            extra: None,
-        };
-        vertices.push(vertex);
-        indices.push((i) as u32);
-    }
+
     let path = "storage_index.redb";
     let data_manager = DataManager::create_or_open(path.as_ref(), None).unwrap();
-    let vertex_data = VertexData{ vertices, indices };
+    let mut streaming = StreamingSession::new(data_manager, 2048);
+    streaming.run().await.unwrap();
 
-    let test_bin_data = TestBinData{ binary: vec![0u8; 4096]};
+    let streaming = Arc::new(streaming);
 
-    let cur_time = Instant::now();
-    let id = data_manager.store_binary_data(Box::new(vertex_data), true);
-    let id2 = data_manager.store_binary_data(Box::new(test_bin_data), false);
+    let oneshot = streaming.dispatch_task(UserRequest{id: 0}).await.unwrap();
+    let oneshot2 = streaming.dispatch_task(UserRequest{id: 1}).await.unwrap();
+    let mut data = oneshot.await.unwrap();
+    loop {
+        data = streaming.dispatch_task(UserRequest{id: 0}).await.unwrap().await.unwrap();
+        println!("len {}", data.data.as_ref().unwrap().len());
+        println!("{:?}", streaming.dispatch_task(UserRequest{id: 1}).await.unwrap().await.unwrap().data.as_ref().unwrap().len());
+    }
 
-
-    let end = cur_time.elapsed();
-
-    println!("{:?}", end);
-
-    let meta = data_manager.get_binary_meta(id).unwrap();
-    let meta2 = data_manager.get_binary_meta(id2).unwrap();
-
-    println!("Binary Meta: {:?}", meta);
-    println!("Binary Meta2: {:?}", meta2);
 }

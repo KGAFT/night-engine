@@ -3,19 +3,18 @@ use glam::{Vec2, Vec3, Vec4};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[repr(C)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Vertex {
-    pub position: Option<Vec3>,
+    pub position: Vec3,
 
-    pub normal: Option<Vec3>,
-    pub tangent: Option<Vec4>,
-    pub uv: Option<Vec2>,
-    pub color: Option<Vec4>,
+    pub normal: Vec3,
+    pub tangent: Vec4,
+    pub uv: Vec2,
+    pub color: Vec4,
 
-    pub bone_indices: Option<[u16; 4]>,
-    pub bone_weights: Option<Vec4>,
-
-    pub extra: Option<HashMap<String, Vec<f32>>>,
+    pub bone_indices: [u16; 4],
+    pub bone_weights: Vec4
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
