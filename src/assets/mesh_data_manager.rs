@@ -260,7 +260,7 @@ impl DataManager {
     }
 
     fn generate_storage_file(base_path: PathBuf) -> Storage {
-        let name = generate_random_alphanumeric_string(32);
+        let name = generate_random_alphanumeric_string(32) + ".bin";
         let mut storage = Storage {
             relative_path: name,
             current_size: 0,

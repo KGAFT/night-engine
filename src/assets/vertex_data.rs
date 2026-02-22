@@ -1,7 +1,6 @@
 use crate::assets::mesh_data_manager::BinData;
 use glam::{Vec2, Vec3, Vec4};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 #[repr(C)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -29,4 +28,11 @@ impl BinData for VertexData {
             + self.vertices.len() * size_of::<Vertex>()
             + self.indices.len() * size_of::<u32>()
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Mesh {
+    pub name: String,
+    pub data: VertexData,
+    pub material_index: usize,
 }

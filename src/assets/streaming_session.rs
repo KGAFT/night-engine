@@ -1,11 +1,12 @@
-use std::any::{Any, TypeId};
-use std::collections::{HashMap, HashSet, VecDeque};
+//It can be done better. The current variant is temp
+
+
+use std::collections::{HashMap, HashSet};
 use std::io::SeekFrom;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::assets::mesh_data_manager::{DataManager, bincode_options};
-use memmap2::MmapOptions;
+use crate::assets::mesh_data_manager::{DataManager};
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio::sync::oneshot::Receiver;
@@ -29,10 +30,10 @@ pub struct Response {
 pub struct Cache {
     data: HashMap<u64, Arc<Vec<u8>>>,
     cleaning_task: Option<JoinHandle<()>>,
-   // cache_max_size: usize,
-   // keys: VecDeque<u64>,
+    // cache_max_size: usize,
+    // keys: VecDeque<u64>,
 
-  //  current_size: usize,
+    //  current_size: usize,
 }
 
 impl Cache {
@@ -40,8 +41,8 @@ impl Cache {
         Self {
             data: Default::default(),
             cleaning_task: None,
-        //    cache_max_size,
-           // keys: Default::default(),
+            //    cache_max_size,
+            // keys: Default::default(),
             //current_size: 0,
         }
     }
@@ -58,10 +59,10 @@ impl Cache {
 
     pub async fn insert_resource(&mut self, id: u64, data: Arc<Vec<u8>>) {
         if !self.data.contains_key(&id) {
-          //  self.current_size += data.len();
+            //  self.current_size += data.len();
             self.data.insert(id, data);
             //self.keys.push_back(id);
-           // self.clean_by_size().await;
+            // self.clean_by_size().await;
         }
     }
 
@@ -81,19 +82,19 @@ impl Cache {
 
     /** Borked
 
-    async fn clean_by_size(&mut self) {
-        if self.cache_max_size != 0 {
-            while self.current_size > self.cache_max_size {
-                if let Some(key) = self.keys.pop_front() {
-                    if let Some(data) = self.data.remove(&key){
-                        self.current_size -= data.len();
-                    }
-                } else {
-                    break;
-                }
-            }
-        }
-    }
+       async fn clean_by_size(&mut self) {
+           if self.cache_max_size != 0 {
+               while self.current_size > self.cache_max_size {
+                   if let Some(key) = self.keys.pop_front() {
+                       if let Some(data) = self.data.remove(&key){
+                           self.current_size -= data.len();
+                       }
+                   } else {
+                       break;
+                   }
+               }
+           }
+       }
 
 
      */
@@ -104,13 +105,13 @@ impl Cache {
                 to_remove.insert(key.clone());
             }
         }
-     //   self.remove_key_entries(&to_remove).await;
+        //   self.remove_key_entries(&to_remove).await;
         to_remove.iter().for_each(|key| {
             if let Some(data) = self.data.remove(key) {
-             //   self.current_size -= data.len();
+                //   self.current_size -= data.len();
             }
         });
-      //  self.clean_by_size().await;
+        //  self.clean_by_size().await;
     }
     /*
     async fn remove_key_entries(&mut self, keys: &HashSet<u64>) {

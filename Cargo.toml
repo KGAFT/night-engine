@@ -14,3 +14,5 @@ rand = "0.10.0-rc.5"
 tokio = { version = "1", features = ["full"] }
 memmap2 = "0.9"
 num_enum = "0.7.5"
+dashmap = "6"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "bmp", "tga", "tiff", "webp"] }
